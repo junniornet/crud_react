@@ -1,6 +1,7 @@
 import { isEmpty, size } from "lodash";
-import React, { useState } from "react";
-import shortid, { isValid } from "shortid";
+import React, { useState, useEffect } from "react";
+//import shortid from "shortid";
+import { addDocument, deleteDocument, getCollection, updateDocument } from "./actions";
 
 function App() {
   const [task, setTask] = useState("");
@@ -9,6 +10,15 @@ function App() {
   const [id, setId] = useState("");
   const [error, setError] = useState(false)
   
+  useEffect(()=>{
+    (async () => {
+      const result = await getCollection("tasks")
+      if (result.statusResponse){
+        setTasks(result.data)
+      }
+    })()
+  }, [])
+
   const validForn = () =>  {
   let isValid = true
   setError(null)
@@ -20,23 +30,34 @@ function App() {
   return isValid
   }
 
-  const addTask = (e) => {
+  const addTask = async(e) => {
     e.preventDefault();
 
     if(!validForn()){
     return
     }
 
-    const newTask = {
-      id: shortid.generate(),
-      name: task,
-    };
+    const result = await addDocument("tasks", {name: task})
+    if (!result.statusResponse){
+      setError(result.error)
+      return
+    }
+    //const newTask = {
+      //id: shortid.generate(),
+      //name: task,
+    //};
 
-    setTasks([...tasks, newTask]);
+    setTasks([...tasks, { id: result.data.id, name: task }]);
     setTask("");
   };
 
-  const deleteTask = (id) => {
+  const deleteTask = async(id) => {
+    const result = await deleteDocument("tasks", id)
+    if (!result.statusResponse){
+      setError(result.error)
+      return
+    }
+
     const filteredTasks = tasks.filter((task) => task.id !== id);
 
     setTasks(filteredTasks);
@@ -48,11 +69,16 @@ function App() {
     setId(theTask.id);
   };
 
-  const saveTask = (e) => {
+  const saveTask = async(e) => {
     e.preventDefault();
-    if (isEmpty(task)) {
-      console.log("Task vacío");
-      return;
+    if(!validForn()){
+      return
+      }
+    
+    const result = await updateDocument("tasks", id, {name: task})
+    if (!result.statusResponse){
+      setError(result.error)
+      return
     }
 
     const editedTask = tasks.map((item) => item.id === id ? { id, name: task } : item
