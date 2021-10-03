@@ -61,6 +61,7 @@ function App() {
     const filteredTasks = tasks.filter((task) => task.id !== id);
 
     setTasks(filteredTasks);
+    setEditMode(false)
   };
 
   const editTask = (theTask) => {
